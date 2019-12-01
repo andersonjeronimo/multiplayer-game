@@ -17,19 +17,27 @@ export class GameService {
   }
 
   public getState = () => {
-    return Observable.create((observer) => {
+    let observable = Observable.create((observer) => {
       this.socket.on('game-state', (state) => {
         observer.next(state);
       });
+      return () => {
+        this.socket.disconnect();
+      };      
     });
+    return observable;
   }
 
   public getMessages = () => {
-    return Observable.create((observer) => {
+    let observable = Observable.create((observer) => {
       this.socket.on('new-message', (message) => {
         observer.next(message);
       });
+      return () => {
+        this.socket.disconnect();
+      };
     });
+    return observable;
   }
 
 }

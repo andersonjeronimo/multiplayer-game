@@ -1,5 +1,6 @@
 import { Component, HostListener, ViewChild, ElementRef, OnInit, NgZone, OnDestroy } from '@angular/core';
 import { GameService } from '../../services/game.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-game',
@@ -15,7 +16,9 @@ export class GameComponent implements OnInit, OnDestroy {
   public title = 'My First Multiplayer Game';
   private requestId;
   private interval;
- 
+
+  private stateSub: Subscription; 
+  private messagesSub: Subscription;
   message: string;
   messages: string[] = [];
   game: any = {};
@@ -27,17 +30,17 @@ export class GameComponent implements OnInit, OnDestroy {
     this.ngZone.runOutsideAngular(() => this.renderScreen());
     setInterval(() => {
       this.renderScreen();
-    }, 200);
+    }, 100);
 
-    this.service
+    this.messagesSub = this.service
       .getMessages()
       .subscribe((message: string) => {
         this.messages.push(message);
       });
 
-    this.service
+    this.stateSub = this.service
       .getState()
-      .subscribe(state => {
+      .subscribe((state) => {
         this.game = state;
       });
   }
@@ -49,21 +52,24 @@ export class GameComponent implements OnInit, OnDestroy {
   
   @HostListener('window:keydown', ['$event'])
   keyEvent(event: KeyboardEvent) {    
-    const command = { keyCode: event.keyCode };    
+    // const command = { keyCode: event.keyCode };    
+    const command = { key: event.key };
     this.service.sendCommand(command);
   }
   
-  renderScreen() {
-    this.context.clearRect(0, 0, this.context.canvas.width, this.context.canvas.height);
-    for (const index in this.game) {
-      const player = this.game[index];
-      this.context.fillStyle = player.color;
-      this.context.fillRect(player.x, player.y, 20, 20);
-    }
-    this.requestId = requestAnimationFrame(() => this.renderScreen);
-  }  
+    renderScreen() {
+      this.context.clearRect(0, 0, this.context.canvas.width, this.context.canvas.height);
+      for (const index in this.game) {
+        const player = this.game[index];
+        this.context.fillStyle = player.color;
+        this.context.fillRect(player.x, player.y, 20, 20);
+      }
+      this.requestId = requestAnimationFrame(() => this.renderScreen);
+    }  
 
   ngOnDestroy() {
+    this.stateSub.unsubscribe();
+    this.messagesSub.unsubscribe();
     clearInterval(this.interval);
     cancelAnimationFrame(this.requestId);
   }
