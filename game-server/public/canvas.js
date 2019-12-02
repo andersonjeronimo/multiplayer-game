@@ -1,8 +1,8 @@
 var socket = io('http://localhost:3000');
 
 var canvas = document.querySelector('canvas');
-canvas.width = 100;//window.innerWidth;
-canvas.height = 100;//window.innerHeight;
+canvas.width = 800;//window.innerWidth;
+canvas.height = 600;//window.innerHeight;
 
 var context = canvas.getContext('2d');
 
@@ -34,5 +34,11 @@ socket.on('new-state', (state) => {
 socket.on('update-player', (player) => {    
     players.map(p => {
         p.playerId === player.playerId ? Object.assign(p, player) : p;
+    });
+});
+
+socket.on('disconnect-player', (player) => {
+    players = players.filter(p => {
+        return p.playerId !== player.playerId;
     });
 });

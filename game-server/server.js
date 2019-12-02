@@ -21,19 +21,19 @@ function movePlayer(command, playerId) {
 
     const selectedCommand = {
         ArrowUp(player) {
-            player.y -= 1;
+            player.y -= 20;
             return;
         },
         ArrowDown(player) {
-            player.y += 1;
+            player.y += 20;
             return;
         },
         ArrowLeft(player) {
-            player.x -= 1;
+            player.x -= 20;
             return;
         },
         ArrowRight(player) {
-            player.x += 1;
+            player.x += 20;
             return;
         }
     }
@@ -48,33 +48,30 @@ function movePlayer(command, playerId) {
 
 }
 
-
-let messages = [];
-
 io.on('connection', (socket) => {
     console.log(`User ${socket.id} connected`);
-    var player = { playerId: socket.id, x: 1, y: 1, color: 'blue' };
+    var x = Math.floor((Math.random() * 800) + 1);
+    var y = Math.floor((Math.random() * 600) + 1);
+    var player = { playerId: socket.id, x, y, color: 'blue' };
     playersState.push(player);
     io.emit('new-state', playersState);
 
-    socket.on('new-command', (command) => {        
+    socket.on('disconnect', () => {
+        console.log(`User ${socket.id} disconnected`);
+        var removed = playersState.find(p => p.playerId === socket.id);
+        playersState = playersState.filter(p => {
+            return p.playerId !== socket.id;
+        });
+        io.emit('new-state', playersState);
+        //io.emit('disconnect-player', removed);
+    });
+
+    socket.on('new-command', (command) => {
         movePlayer(command, socket.id);
         var player = playersState.find(p => p.playerId === socket.id);
         io.emit('update-player', player);
     });
-
-    socket.emit('previous-messages', messages);
-
-    socket.on('new-message', (message) => {
-        messages.push(message);
-        socket.broadcast.emit('new-message', `New message from ${socket.id} : ${message}`);
-    });
-
-    socket.on('send-message', data => {
-        messages.push(data);
-        socket.broadcast.emit('received-message', data);
-    });
-
+    
 });
 
 app.get('/status', (req, res) => {
